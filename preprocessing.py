@@ -12,9 +12,7 @@ import yaml
 import argparse
 import numpy as np
 from tqdm import tqdm
-from joblib import Parallel, delayed
 import cv2
-import pdb
 
 def get_args():
     parser = argparse.ArgumentParser(description = 'Downsample, crop, and convert videos to .avi')
