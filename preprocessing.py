@@ -32,6 +32,18 @@ def get_args():
 if __name__ == '__main__':
     
     def get_video_dims(cap):
+        '''
+        Retrieve video dimensions from cv2.VideoCapture object
+        
+        Input:
+            - cap: cv2.VideoCapture object
+        
+        Output:
+            - frame_count: int, number of frames
+            - frame_width: int, number of pixels in frame width
+            - frame_height: int, number of pixels in frame height
+        '''
+        
         frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))       
@@ -42,7 +54,7 @@ if __name__ == '__main__':
         Find x,y limits where the mean fluorescence is always above a defined threshold value
 
         Input:
-            - filanem: string, path to video
+            - filename: string, path to video
             - crop_thresh: int, fluorescence threshold to find x,y limits to crop to
         Output:
             - xlims: tuple of 2 ints, x-axis pixels to crop to
@@ -87,19 +99,20 @@ if __name__ == '__main__':
         cap.release()
 
         return (xs, xe), (ys, ye), frame_count
-
-    def save_to_avi(vid, fps, filename):
-
-        total_frames, height, width = vid.shape
-        out = cv2.VideoWriter(filename=filename, fourcc= 0.0, fps=fps, frameSize=(height, width),isColor=True)
-
-        for frame in vid:
-            frame =  np.repeat(np.reshape(frame, newshape=(height, width, 1)), repeats=3, axis=2)
-            out.write(frame)
-        
-        out.release()
+    
             
     def process_and_convert(filename, ds_factor, xlims, ylims, fps):
+        
+        '''
+        Downsample, crop, and convert video to avi
+        
+        Input:
+            filename  : string, path to input video
+            ds_factor : int, downsampling factor
+            xlims     : tuple of 2 ints, x-axis limits to crop to
+            ylims     : tuple of 2 ints, y-axis limits to crop to
+            fps       : int or float, frame rate of output video
+        '''
         
         cap = cv2.VideoCapture(filename)
         frame_rate = fps
@@ -117,16 +130,10 @@ if __name__ == '__main__':
         
         for ix in tqdm(range(frame_count), 'Downsampling and cropping, and saving to avi'):
             ret, frame = cap.read()            
-#             if ix < start:
-#                 continue
-#             elif ix >= stop:
-#                 continue
-#             else:
             frame_set.append(frame[ys:ye, xs:xe]) # Cropping
             if len(frame_set) == ds_factor or ix == (frame_count-1):
                 frame_set = np.array(frame_set)
                 frame_proc = np.round(frame_set.mean(axis=0)).astype('uint8') # Downsampling
-#                 pdb.set_trace()
                 out.write(frame_proc)
 
                 frame_set = []
@@ -156,20 +163,3 @@ if __name__ == '__main__':
         xlims = None
         ylims = None
     process_and_convert(filename=filename, ds_factor=args.downsample, xlims=xlims, ylims=ylims, fps=args.fps)
-    
-    
-    
-    
-#     chunk_size = np.ceil(frame_count/(args.cores*100))*100 # chunk_size = frame_count/num_cores rounded up to nearest 100
-    
-#     starts = np.arange(0,frame_count,chunk_size)
-#     stops = starts+chunk_size
-    
-#     frames = list(zip(starts,stops))
-    
-#     Parallel(n_jobs=args.cores)(delayed(process_chunk)(filename=filename, start=start, stop=stop, ds_factor = args.ds_factor, xlims = xlims, ylims = ylims, fps = fps) for start, stop in frames)
-    
-#     filename_new = args.base_dir + '%s/%s_%s_%s%s'%(animal, timestamp, animal, session, '.avi')
-    
-#     system('avimerge -o %s -i %s%s/*_temp_*.avi'%(filename_new, args.basedir, animal))
-#     system('rm %s%s/*_temp_*.avi'%(args.basedir, animal))
