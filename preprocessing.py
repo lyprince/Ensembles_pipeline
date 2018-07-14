@@ -14,6 +14,7 @@ import numpy as np
 from tqdm import tqdm
 from joblib import Parallel, delayed
 import cv2
+import pdb
 
 def get_args():
     parser = argparse.ArgumentParser(description = 'Downsample, crop, and convert videos to .avi')
@@ -98,37 +99,42 @@ if __name__ == '__main__':
         
         out.release()
             
-    def process_chunk(filename, start, stop, ds_factor, xlims, ylims, fps):
-        chunk = stop/(stop-start)
+    def process_and_convert(filename, ds_factor, xlims, ylims, fps):
         
         cap = cv2.VideoCapture(filename)
         frame_rate = fps
         frame_count, frame_width, frame_height = get_video_dims(cap)
-        xs,xe = xlims
-        ys,ye = ylims
+        if xlims is not None and ylims is not None:
+            xs,xe = xlims
+            ys,ye = ylims
+        else:
+            xs, ys = 0, 0
+            xe, ye = frame_width, frame_height
         
-        vid_proc = np.zeros((int((stop-start)/ds_factor), ye-ys, xe-xs))
+        filename_new = path.splitext(filename)[0] + '.avi'
+        out = cv2.VideoWriter(filename=filename_new, fourcc=0, fps = fps/ds_factor, frameSize=(xe-xs, ye-ys), isColor=True)
         frame_set = []
-        ix_proc = 0
         
-        for ix in tqdm(range(frame_count), 'Downsampling and cropping'):
+        for ix in tqdm(range(frame_count), 'Downsampling and cropping, and saving to avi'):
             ret, frame = cap.read()            
-            if ix < start:
-                continue
-            elif ix >= stop:
-                continue
-            else:
-                frame_set.append(frame[ys:ye, xs:xe, 0]) # Cropping
-                if len(frame_set) == ds_factor or ix == (frame_count-1):
-                    frame_set = np.array(frame_set)
-                    vid_proc[ix_proc] = np.round(frame_set.mean(axis=0)) # Downsampling
-                    
-                    ix_proc+=1
-                    frame_set = []
+#             if ix < start:
+#                 continue
+#             elif ix >= stop:
+#                 continue
+#             else:
+            frame_set.append(frame[ys:ye, xs:xe]) # Cropping
+            if len(frame_set) == ds_factor or ix == (frame_count-1):
+                frame_set = np.array(frame_set)
+                frame_proc = np.round(frame_set.mean(axis=0)).astype('uint8') # Downsampling
+#                 pdb.set_trace()
+                out.write(frame_proc)
+
+                frame_set = []
                     
         
-        filename_tmp = path.splitext(filename)[0] + '_tmp_%i.avi'%chunk
-        save_to_avi(vid=vid_proc, fps=fps, filename=filename_tmp)
+        cap.release()
+        out.release()
+                              
     
     args = get_args()
     
@@ -144,17 +150,26 @@ if __name__ == '__main__':
     assert path.exists(filename), 'Path does not exist'
     print('Downsampling, cropping, and converting %s: %s to .avi'%(animal, session))
     
-    xlims, ylims, frame_count = get_vid_crop_lims(filename, crop_thresh = args.crop_thresh)
-    chunk_size = np.ceil(frame_count/(args.cores*100))*100 # chunk_size = frame_count/num_cores rounded up to nearest 100
+    if args.crop:
+        xlims, ylims, frame_count = get_vid_crop_lims(filename, crop_thresh = args.crop_thresh)
+    else:
+        xlims = None
+        ylims = None
+    process_and_convert(filename=filename, ds_factor=args.downsample, xlims=xlims, ylims=ylims, fps=args.fps)
     
-    starts = np.arange(0,frame_count,chunk_size)
-    stops = starts+chunk_size
     
-    frames = list(zip(starts,stops))
     
-    Parallel(n_jobs=args.cores)(delayed(process_chunk)(filename=filename, start=start, stop=stop, ds_factor = args.ds_factor, xlims = xlims, ylims = ylims, fps = fps) for start, stop in frames)
     
-    filename_new = args.base_dir + '%s/%s_%s_%s%s'%(animal, timestamp, animal, session, '.avi')
+#     chunk_size = np.ceil(frame_count/(args.cores*100))*100 # chunk_size = frame_count/num_cores rounded up to nearest 100
     
-    system('avimerge -o %s -i %s%s/*_temp_*.avi'%(filename_new, args.basedir, animal))
-    system('rm %s%s/*_temp_*.avi'%(args.basedir, animal))
+#     starts = np.arange(0,frame_count,chunk_size)
+#     stops = starts+chunk_size
+    
+#     frames = list(zip(starts,stops))
+    
+#     Parallel(n_jobs=args.cores)(delayed(process_chunk)(filename=filename, start=start, stop=stop, ds_factor = args.ds_factor, xlims = xlims, ylims = ylims, fps = fps) for start, stop in frames)
+    
+#     filename_new = args.base_dir + '%s/%s_%s_%s%s'%(animal, timestamp, animal, session, '.avi')
+    
+#     system('avimerge -o %s -i %s%s/*_temp_*.avi'%(filename_new, args.basedir, animal))
+#     system('rm %s%s/*_temp_*.avi'%(args.basedir, animal))
