@@ -14,6 +14,9 @@ import numpy as np
 from tqdm import tqdm
 import cv2
 
+#############################################################################################    
+#############################################################################################
+
 def get_args():
     parser = argparse.ArgumentParser(description = 'Downsample, crop, and convert videos to .avi')
     parser.add_argument('animal', help='animal ID', nargs=1)
@@ -22,12 +25,17 @@ def get_args():
     parser.add_argument('-c', '--crop', dest='crop', help='Crop videos', action='store_true')
     parser.set_defaults(crop=False)
     parser.add_argument('-ct', '--crop_thresh', dest='crop_thresh', type=int, default=40)
+    parser.add_argument('-r', '--redo', help='Redo preprocessing', action='store_true')
+    parser.set_defaults(redo=False)
     parser.add_argument('-d', '--downsample', help='downsample factor, default is 4', type=int, default=4)
     parser.add_argument('--cores', help='cores to use, default is 1', type=int, default=4)
-    parser.add_argument('--fps', help='frames per second', default=20)
+    parser.add_argument('-f', '--fps', help='frames per second', default=20)
     return parser.parse_args()
 
 if __name__ == '__main__':
+    
+#############################################################################################    
+#############################################################################################
     
     def get_video_dims(cap):
         '''
@@ -46,6 +54,9 @@ if __name__ == '__main__':
         frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))       
         return (frame_count, frame_width, frame_height)
+    
+#############################################################################################    
+#############################################################################################
 
     def get_vid_crop_lims(filename, crop_thresh=40):
         '''
@@ -97,7 +108,9 @@ if __name__ == '__main__':
         cap.release()
 
         return (xs, xe), (ys, ye), frame_count
-    
+
+#############################################################################################    
+#############################################################################################
             
     def process_and_convert(filename, ds_factor, xlims, ylims, fps):
         
@@ -135,11 +148,17 @@ if __name__ == '__main__':
                 out.write(frame_proc)
 
                 frame_set = []
-                    
         
         cap.release()
         out.release()
-                              
+
+        
+#############################################################################################
+
+###################################### PREPROCESSING ########################################
+
+#############################################################################################
+        
     
     args = get_args()
     
@@ -147,17 +166,29 @@ if __name__ == '__main__':
     
     animal    = args.animal[0]
     session   = args.session[0]
-    timestamp = cell_info[animal][session]
+    timestamp = cell_info[animal][session]['timestamp']
     fileext   = cell_info[animal]['orig_file_ext']
     frate     = cell_info[animal]['frame_rate']
+    completed = cell_info[animal][session]['preprocessing']['completed']
     
     filename  = args.base_dir + '%s/%s_%s_%s%s'%(animal, timestamp, animal, session, fileext)
     assert path.exists(filename), 'Path does not exist'
-    print('Downsampling, cropping, and converting %s: %s to .avi'%(animal, session))
     
-    if args.crop:
-        xlims, ylims, frame_count = get_vid_crop_lims(filename, crop_thresh = args.crop_thresh)
+    if not completed or args.redo:
+    
+        print('Downsampling, cropping, and converting %s: %s to .avi'%(animal, session))
+
+        if args.crop:
+            xlims, ylims, frame_count = get_vid_crop_lims(filename, crop_thresh = args.crop_thresh)
+        else:
+            xlims = None
+            ylims = None
+        process_and_convert(filename=filename, ds_factor=args.downsample, xlims=xlims, ylims=ylims, fps=args.fps)
+        
+        cell_info[animal][session]['preprocessing']['completed'] = True
+        yaml.dump(cell_info, open('./cell_metadata.yaml', 'w'))
+    
     else:
-        xlims = None
-        ylims = None
-    process_and_convert(filename=filename, ds_factor=args.downsample, xlims=xlims, ylims=ylims, fps=args.fps)
+        filename_new = path.splitext(filename)[0] + '.avi'
+        assert path.exists(filename_new), 'Path does not exist, try to redo preprocessing with -r option'
+        print('Preprocessing step for %s_%s already completed'%(animal, session))
