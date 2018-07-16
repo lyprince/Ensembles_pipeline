@@ -42,13 +42,16 @@ if __name__ == '__main__':
         Retrieve video dimensions from cv2.VideoCapture object
         
         Input:
-            - cap: cv2.VideoCapture object
+            - cap: cv2.VideoCapture object, (or str if path_to_video)
         
         Output:
             - frame_count: int, number of frames
             - frame_width: int, number of pixels in frame width
             - frame_height: int, number of pixels in frame height
         '''
+        
+        if type(cap) is str:
+            cap = cv2.VideoCapture(cap)
         
         frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -186,6 +189,12 @@ if __name__ == '__main__':
         process_and_convert(filename=filename, ds_factor=args.downsample, xlims=xlims, ylims=ylims, fps=args.fps)
         
         cell_info[animal][session]['preprocessing']['completed'] = True
+        
+        frame_count, frame_width, frame_height = get_video_dims(path.splitext(filename)[0]+'.avi')
+        cell_info[animal][session]['frame_count'] = frame_count
+        cell_info[animal][session]['frame_width'] = frame_width
+        cell_info[animal][session]['frame_height'] = frame_height
+        
         yaml.dump(cell_info, open('./cell_metadata.yaml', 'w'))
     
     else:

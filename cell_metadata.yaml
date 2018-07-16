@@ -15,8 +15,11 @@ m38-1:
     timestamp: 2017-12-08-13-46-58
   train:
     cnmfe: {completed: false}
+    frame_count: 4714
+    frame_height: 484
+    frame_width: 474
     lfads: {completed: false}
-    motion_correction: {completed: false}
+    motion_correction: {bord_cnmf: 5, bord_moco: 1, completed: true}
     preprocessing: {completed: true}
     timestamp: 2017-12-06-13-47-01
 m41-1:
