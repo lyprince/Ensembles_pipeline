@@ -1,5 +1,5 @@
 m38-1:
-  frame_rate: 20
+  orig_frame_rate: 20
   orig_file_ext: .mkv
   testA:
     cnmfe: {completed: false}
@@ -18,6 +18,7 @@ m38-1:
     frame_count: 4714
     frame_height: 484
     frame_width: 474
+    frame_rate: 10
     lfads: {completed: false}
     motion_correction: {bord_cnmf: 5, bord_moco: 1, completed: true}
     preprocessing: {completed: true}

@@ -171,7 +171,7 @@ if __name__ == '__main__':
     session   = args.session[0]
     timestamp = cell_info[animal][session]['timestamp']
     fileext   = cell_info[animal]['orig_file_ext']
-    frate     = cell_info[animal]['frame_rate']
+    frate     = cell_info[animal]['orig_frame_rate']
     completed = cell_info[animal][session]['preprocessing']['completed']
     
     filename  = args.base_dir + '%s/%s_%s_%s%s'%(animal, timestamp, animal, session, fileext)
@@ -191,10 +191,12 @@ if __name__ == '__main__':
         cell_info[animal][session]['preprocessing']['completed'] = True
         
         frame_count, frame_width, frame_height = get_video_dims(path.splitext(filename)[0]+'.avi')
+        
         cell_info[animal][session]['frame_count'] = frame_count
         cell_info[animal][session]['frame_width'] = frame_width
         cell_info[animal][session]['frame_height'] = frame_height
-        
+        cell_info[animal][session]['frame_rate'] = frame_rate
+
         yaml.dump(cell_info, open('./cell_metadata.yaml', 'w'))
     
     else:

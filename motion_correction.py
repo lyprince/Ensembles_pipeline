@@ -35,7 +35,6 @@ if __name__ == '__main__':
     session   = args.session[0]
     timestamp = cell_info[animal][session]['timestamp']
     fileext   = '.avi'
-    frate     = cell_info[animal]['frame_rate']
     completed = cell_info[animal][session]['motion_correction']['completed']
     filename  = args.base_dir + '%s/%s_%s_%s%s'%(animal, timestamp, animal, session, fileext)
     

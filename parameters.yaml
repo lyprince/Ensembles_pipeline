@@ -24,7 +24,7 @@ cnmfe:
   gnb                 : 0
   nb_patch            : 0
   min_corr            : 0.8
-  min_pnr             : 12.0
+  min_pnr             : 15.0
   ssub_B              : 1
   ring_size_factor    : 1.5
 
