@@ -6,10 +6,13 @@ Date : 16th July 2018
 from os import system, path
 import yaml
 import argparse
+from tqdm import tqdm
 
 import cv2
 import numpy as np
 from caiman import load_memmap
+
+import pdb
 
 def get_args():
     parser = argparse.ArgumentParser(description = 'Concatenate a set of movies at various stages of processing')
@@ -42,8 +45,6 @@ if __name__ == '__main__':
                 frame_count.append(int(count))
                 frame_width.append(int(width))
                 frame_height.append(int(height))
-        
-        print(frame_count)
                 
         assert len(set(frame_count))==1, 'Videos do not have the same number of frames'
         assert len(set(frame_width))==1, 'Videos do not have the same frame width'
@@ -51,6 +52,21 @@ if __name__ == '__main__':
         
         return frame_count[0], frame_width[0], frame_height[0]
     
+    def check_animal_session(paths):
+        animals = []
+        sessions = []
+
+        for p in paths:
+            dirname = path.dirname(path.realpath(p))
+            timestamp, animal, session = path.basename(p).split('_')[:3]
+            session = path.splitext(session)[0]
+            animals.append(animal)
+            sessions.append(session)
+
+        assert len(set(animals))==1, 'Videos not from same animal'
+        assert len(set(sessions))==1, 'Videos not from same session'
+        
+        return dirname, timestamp, animals[0], sessions[0]
     
     def frameGenerator(path_to_video):
         rawpath, ext = path.splitext(path_to_video)
@@ -68,5 +84,34 @@ if __name__ == '__main__':
     
     args = get_args()
     
+    dirname, timestamp, animal, session = check_animal_session(args.input)
     frame_count, frame_width, frame_height = check_dims(args.input)
     frameGenerators = [frameGenerator(path_to_video) for path_to_video in args.input]
+    
+    total_frame_height = frame_height + 2*args.border
+    total_frame_count = frame_count
+    total_frame_width = frame_width*len(args.input) + (len(args.input)+1)*args.border
+    
+    frame_base = np.zeros((total_frame_height, total_frame_width))
+    fourcc = cv2.VideoWriter_fourcc(*'X264')
+    
+    output_filename = dirname + '/%s_%s_%s_comparison.avi'%(timestamp, animal, session)
+    out = cv2.VideoWriter(output_filename, fourcc, 40, (total_frame_width, total_frame_height), isColor=False)
+    
+    
+    for frames in tqdm(zip(*frameGenerators)):
+        total_frame = frame_base.copy()
+        
+        for ix,frame in enumerate(frames):
+            xs = args.border*(ix+1) + frame_width*ix
+            xe = args.border*(ix+1) + frame_width*(ix+1)
+            ys = args.border
+            ye = args.border + frame_height
+            
+            total_frame[ys:ye,xs:xe] = frame
+            total_frame = total_frame.astype('uint8')
+            
+        out.write(total_frame)
+
+    out.release()
+        
