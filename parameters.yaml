@@ -11,7 +11,7 @@ motion_correction:
 
 cnmfe:
   p                   : 1
-  K                   : None
+  K                   : null
   gSig                : 5
   gSiz                : 16
   merge_thresh        : 0.8
@@ -19,8 +19,8 @@ cnmfe:
   stride              : 40
   tsub                : 2
   ssub                : 2
-  Ain                 : None
-  low_rank_background : None
+  Ain                 : null
+  low_rank_background : null
   gnb                 : 0
   nb_patch            : 0
   min_corr            : 0.8

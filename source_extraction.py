@@ -9,6 +9,7 @@ Adapted from demo_pipeline_CNMFE by CaImAn team.
 
 import argparse
 import yaml
+from os import path
 
 import caiman as cm
 from caiman.summary_images import correlation_pnr
@@ -191,9 +192,9 @@ if __name__ == '__main__':
     
     completed    = cell_info[animal][session]['cnmfe']['completed']
     
-    basename     = args.base_dir + '%s/%s_%s_%s'%%(animal, timestamp, animal, session)
+    basename     = args.base_dir + '%s/%s_%s_%s'%(animal, timestamp, animal, session)
     
-    filename     = _memmap_d1_%i_d2_%i_d3_1_order_C_frames_%i_%s'%(frame_height, frame_width, frame_count, fileext)
+    filename     = basename + '_memmap_d1_%i_d2_%i_d3_1_order_C_frames_%i_%s'%(frame_height, frame_width, frame_count, fileext)
     
     if not completed or args.redo:
         
@@ -227,7 +228,7 @@ if __name__ == '__main__':
         
         if path.exists(basename+'_cn_filter.npy') and path.exists(basename+'_pnr.npy'):
             cn_filter = np.load(basename+'_cn_filter.npy')
-            pnr = np.load(basename+'_pnr.npy', pnr)
+            pnr = np.load(basename+'_pnr.npy')
             
         else:
             cn_filter, pnr = cm.summary_images.correlation_pnr(Y[::5], gSig=gSig, swap_dim=False)
@@ -237,7 +238,10 @@ if __name__ == '__main__':
             fig = inspect_correlation_pnr(cn_filter, pnr)
             fig.savefig(args.base_dir+'%s/%s_%s_%s_corr_pnr_image.svg'%(animal, timestamp, animal, session))
             plt.close()
-            
+        
+#         import pdb
+#         pdb.set_trace()
+        
         cnm = cnmf.CNMF(n_processes=args.n_processes, method_init='corr_pnr', k=K,
                 gSig=(gSig, gSig), gSiz=(gSiz, gSiz),
                 merge_thresh = merge_thresh, p=p, dview= None, #dview,
@@ -258,7 +262,7 @@ if __name__ == '__main__':
         r_values_min = parameters['r_values_min']
         
         idx_components, idx_components_bad, comp_SNR, r_values, pred_CNN = estimate_components_quality_auto(
-                            Y, cnm.A, cnm.C, cnm.b, cnm.f, cnm.YrA, frate, 
+                            Y, cnm.A, cnm.C, cnm.b, cnm.f, cnm.YrA, frame_rate, 
                             decay_time, gSig, dims, dview=None, 
                             min_SNR=min_SNR, r_values_min=r_values_min, use_cnn=False)
         
@@ -269,7 +273,7 @@ if __name__ == '__main__':
         plt.subplot(122); 
         crd = plot_contours(cnm.A.tocsc()[:,idx_components_bad], cn_filter, thr=.8, vmax=0.95)
         plt.title('Contour plots of rejected components')
-        fig.save(basename+'_cnmfe_components_spatial.svg')
+        fig.savefig(basename+'_cnmfe_components_spatial.svg')
         plt.close()
         
         # Accepted Components
