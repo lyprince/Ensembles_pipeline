@@ -1,6 +1,8 @@
 '''
 Author : Luke Prince
 Date : 16th July 2018
+
+Concatenate a set of movies to visualise effects of processing steps
 '''
 
 from os import system, path
