@@ -98,9 +98,12 @@ if __name__ == '__main__':
     output_filename = dirname + '/%s_%s_%s_comparison.avi'%(timestamp, animal, session)
     out = cv2.VideoWriter(output_filename, fourcc, 40, (total_frame_width, total_frame_height), isColor=False)
     
+    movieTypes = ['Original', 'Motion Corrected', 'Source Extracted']
+
     
     for frames in tqdm(zip(*frameGenerators)):
         total_frame = frame_base.copy()
+        bottomLeftTexts = []
         
         for ix,frame in enumerate(frames):
             xs = args.border*(ix+1) + frame_width*ix
@@ -110,7 +113,9 @@ if __name__ == '__main__':
             
             total_frame[ys:ye,xs:xe] = frame
             total_frame = total_frame.astype('uint8')
-            
+            cv2.putText(total_frame, movieTypes[ix], org = (xs + 10, ys + 10), 
+                        fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=1, color=255, lineType=2)
+                  
         out.write(total_frame)
 
     out.release()
