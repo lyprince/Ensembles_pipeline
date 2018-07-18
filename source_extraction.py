@@ -22,6 +22,8 @@ from caiman.components_evaluation import estimate_components_quality_auto
 import numpy as np
 from scipy.sparse import spdiags
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+from matplotlib.cm import get_cmap
 
 try:
     import bokeh
@@ -68,7 +70,7 @@ if __name__ == '__main__':
 
         output_file(filename)
         
-        colormap = cm.get_cmap(cmap)
+        colormap = get_cmap(cmap)
         grayp = [mpl.colors.rgb2hex(m) for m in colormap(np.arange(colormap.N))]
         nr, T = C.shape
         nA2 = np.ravel(np.power(A, 2).sum(0)) if type(
@@ -288,4 +290,4 @@ if __name__ == '__main__':
         
         nrn_movie = np.reshape(cnm.A.tocsc()[:,idx_components].dot(cnm.C[idx_components]),dims+(-1,), order = 'F').transpose(2,0,1)
         
-        save_memmap([nrn_movie], basename = basename + '_neurons_memmap', order= 'F', border_to_0 = bord_px) 
+        save_memmap([nrn_movie], base_name = basename + '_neurons_memmap', order= 'F', border_to_0 = bord_px) 
