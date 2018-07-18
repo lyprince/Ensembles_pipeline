@@ -20,7 +20,7 @@ from caiman.components_evaluation import estimate_components_quality_auto
 
 
 import numpy as np
-from scipy.sparse import spdiags
+from scipy.sparse import spdiags, save_npz
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.cm import get_cmap
@@ -40,6 +40,7 @@ def get_args():
     parser.add_argument('--base_dir', dest = 'base_dir', help='Base directory to find files', default='/home/luke/Documents/Projects/RichardsPostdoc/Ensembles/CA1_imaging/')
     parser.add_argument('-r', '--redo', help='Redo source extraction')
     parser.add_argument('-n', '--n_processes', help='Number of processes', type=int, default=8)
+    parser.add_argument('--output_gain', help= 'Gain of output neuron video', type=int, default=8)
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -275,19 +276,24 @@ if __name__ == '__main__':
         plt.subplot(122); 
         crd = plot_contours(cnm.A.tocsc()[:,idx_components_bad], cn_filter, thr=.8, vmax=0.95)
         plt.title('Contour plots of rejected components')
-        fig.savefig(basename+'_cnmfe_components_spatial.svg')
+        fig.savefig(basename+'_cnmfe-spatial.svg')
         plt.close()
         
         # Accepted Components
         nb_view_patches(Yr, cnm.A.tocsc()[:, idx_components], cnm.C[idx_components], 
                 cnm.b, cnm.f, dims[0], dims[1], YrA=cnm.YrA[idx_components], image_neurons=cn_filter,
-                denoised_color='red', thr=0.8, cmap='gray', save=True, filename=basename+'_cnmfe_components_accepted.html')
+                denoised_color='red', thr=0.8, cmap='gray', save=True, filename=basename+'_cnmfe-accepted.html')
         
         # Rejected Components
         nb_view_patches(Yr, cnm.A.tocsc()[:, idx_components_bad], cnm.C[idx_components_bad], 
                 cnm.b, cnm.f, dims[0], dims[1], YrA=cnm.YrA[idx_components_bad], image_neurons=cn_filter,
-                denoised_color='red', thr=0.8, cmap='gray', save=True, filename=basename+'_cnmfe_components_rejected.html');
+                denoised_color='red', thr=0.8, cmap='gray', save=True, filename=basename+'_cnmfe-rejected.html');
         
         nrn_movie = np.reshape(cnm.A.tocsc()[:,idx_components].dot(cnm.C[idx_components]),dims+(-1,), order = 'F').transpose(2,0,1)
         
-        save_memmap([nrn_movie], base_name = basename + '_neurons_memmap', order= 'F', border_to_0 = bord_px) 
+        nrn_movie = np.minimum(np.maximum(nrn_movie, 0)*args.output_gain, 255)
+        
+        save_npz(basename+'_cnmfe-spatial.npz', cnm.A.tocsc())
+        np.save(basename+'_cnmfe-temporal.npy', cnm.C)
+        
+        save_memmap([nrn_movie], base_name = basename + '_neurons_memmap', order= 'C', border_to_0 = bord_px) 

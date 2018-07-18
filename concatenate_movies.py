@@ -43,7 +43,8 @@ if __name__ == '__main__':
                 cap.release()
             
             elif ext == '.mmap':
-                timestamp, animal, session, _0, _1, height, _2, width, _3, _4, _5, _6, _7, count, _ext = basename.split('_')
+                basename_desc = basename[basename.find('memmap'):]
+                _0, _1, height, _2, width, _3, _4, _5, _6, _7, count, _ext = basename_desc.split('_')
                 frame_count.append(int(count))
                 frame_width.append(int(width))
                 frame_height.append(int(height))
