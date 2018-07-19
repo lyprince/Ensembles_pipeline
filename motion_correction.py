@@ -109,5 +109,5 @@ if __name__ == '__main__':
         
         filename_new = path.splitext(filename)[0] + '_memmap_d1_%i_d2_%i_d3_1_order_C_frames_%i_.mmap'%(frame_height, frame_width, frame_count)
         print(filename_new)
-        assert path.exists(filename_new), 'Path does not exist, try to redo preprocessing with -r option'
+        assert path.exists(filename_new), 'Path does not exist, try to redo motion correction with -r option'
         print('Motion correction step for %s_%s already completed'%(animal, session))

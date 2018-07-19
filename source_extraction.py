@@ -289,6 +289,7 @@ if __name__ == '__main__':
                 cnm.b, cnm.f, dims[0], dims[1], YrA=cnm.YrA[idx_components_bad], image_neurons=cn_filter,
                 denoised_color='red', thr=0.8, cmap='gray', save=True, filename=basename+'_cnmfe-rejected.html');
         
+        # Create movie from Spatial and Temporal Components
         nrn_movie = np.reshape(cnm.A.tocsc()[:,idx_components].dot(cnm.C[idx_components]),dims+(-1,), order = 'F').transpose(2,0,1)
         
         nrn_movie = np.minimum(np.maximum(nrn_movie, 0)*args.output_gain, 255)
@@ -296,4 +297,13 @@ if __name__ == '__main__':
         save_npz(basename+'_cnmfe-spatial.npz', cnm.A.tocsc())
         np.save(basename+'_cnmfe-temporal.npy', cnm.C)
         
-        save_memmap([nrn_movie], base_name = basename + '_neurons_memmap', order= 'C', border_to_0 = bord_px) 
+        save_memmap([nrn_movie], base_name = basename + '_neurons_memmap', order= 'C', border_to_0 = bord_px)
+        
+        cell_info[animal][session]['cnmfe']['completed'] = True
+        
+    else:
+        filename_spatial = basename + '_cnmfe-spatial.npz'
+        filename_temporal = basename + '_cnmfe-temporal.npy'
+        assert path.exists(filename_spatial) and path.exists(filename_temporal), 'Path does not exist, try to redo source extraction with -r option'
+        print('Source extraction step for %s_%s already completed'%(animal, session))
+        
